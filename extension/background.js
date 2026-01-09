@@ -9,7 +9,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 async function enhanceText(text) {
   const res = await fetch(
-    `http://localhost:6767/api/groq?prompt=${encodeURIComponent(text)}`
+    `https://promptify-azfb.onrender.com/api/groq?prompt=${encodeURIComponent(
+      text
+    )}`
   );
   return res.json();
 }
