@@ -1,0 +1,20 @@
+{
+  "name": "promptify",
+  "version": "1.0.0",
+  "description": "A Chrome Extension to enhance your AI prompts.",
+  "license": "ISC",
+  "author": "LaurentMaxhuni",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "groq-sdk": "^0.37.0",
+    "nodemon": "^3.1.11"
+  }
+}
