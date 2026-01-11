@@ -13,7 +13,7 @@ const URL_LCL = "http://localhost:6767"
 
 async function enhanceText(text, framework) {
   const res = await fetch(
-    `${URL_LCL}/api/groq?prompt=${encodeURIComponent(
+    `${URL}/api/groq?prompt=${encodeURIComponent(
       text
     )}&framework=${encodeURIComponent(framework)}`
   );
