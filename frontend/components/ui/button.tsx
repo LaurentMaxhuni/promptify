@@ -34,16 +34,40 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+    render?: React.ReactElement
+  }
+
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  render,
+  children,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+}: ButtonProps) {
+  const classes = cn(buttonVariants({ variant, size, className }))
+
+  if (render) {
+    const resolvedChildren =
+      children !== undefined ? children : render.props.children
+
+    return (
+      <Slot.Root
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        className={classes}
+        {...props}
+      >
+        {React.cloneElement(render, undefined, resolvedChildren)}
+      </Slot.Root>
+    )
+  }
+
   const Comp = asChild ? Slot.Root : "button"
 
   return (
@@ -51,9 +75,11 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={classes}
       {...props}
-    />
+    >
+      {children}
+    </Comp>
   )
 }
 

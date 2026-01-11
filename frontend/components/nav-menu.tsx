@@ -14,7 +14,6 @@ const navLinks = [
   { label: "Overview", href: "#overview" },
   { label: "Features", href: "#features" },
   { label: "FAQ", href: "#faq" },
-  { label: "Download", href: "#download" },
 ];
 
 export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (

@@ -17,10 +17,6 @@ const footerLinks = [
     href: "#faq",
   },
   {
-    title: "Download",
-    href: "#download",
-  },
-  {
     title: "GitHub",
     href: "https://github.com/LaurentMaxhuni/promptify",
     external: true,

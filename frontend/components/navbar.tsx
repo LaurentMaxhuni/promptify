@@ -15,7 +15,7 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           <Button asChild className="rounded-full">
-            <Link href="#download">Get Promptify</Link>
+            <Link href="#">Get Promptify</Link>
           </Button>
 
           {/* Mobile Menu */}

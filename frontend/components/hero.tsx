@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <div
       id="overview"
-      className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden"
+      className="relative min-h-screen py-6 flex items-center justify-center px-6"
     >
       <AnimatedGridPattern
         numSquares={30}
@@ -26,7 +26,7 @@ export default function Hero() {
           className="rounded-full py-1 border-border"
           asChild
         >
-          <Link href="#">
+          <Link href="https://github.com/LaurentMaxhuni/promptify/releases/tag/v1.2">
             Just released v1.2 <ArrowUpRight className="ml-1 size-4" />
           </Link>
         </Badge>
@@ -36,14 +36,15 @@ export default function Hero() {
         <p className="mt-6 md:text-lg text-foreground/80">
           Enhance your prompt by choosing from a variety of frameworks such as RACE, CREATE, TAG, CREO which tell the enhancer how the output should be based on your current prompt. Just one click and done.
         </p>
-        <div id="download" className="mt-12 flex items-center justify-center gap-4">
-          <Button size="lg" className="rounded-full text-base">
+        <div className="mt-12 flex items-center justify-center gap-4">
+          <Button size="lg" disabled className="rounded-full text-base">
             Get Extension <ArrowUpRight className="h-5! w-5!" />
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="rounded-full text-base shadow-none"
+            className="rounded-full text-base shadow-none cursor-pointer"
+            render={<Link href='https://github.com/LaurentMaxhuni/promptify/releases/tag/v1.2' />}
           >
             <CirclePlay className="h-5! w-5!" /> Get via GitHub
           </Button>

@@ -6,7 +6,7 @@ import FAQ from "@/components/faq";
 import Footer from "@/components/footer";
 
 export default function Page() {
-return <div className="relative h-screen">
+return <div className="relative">
   <Navbar />
   <Hero />
   <Features />
