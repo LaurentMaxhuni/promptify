@@ -13,19 +13,41 @@
       <center>
         <div>
           <img src="../../logo.png" alt="">
-          <h1>Promptify</h1>
         </div>
         <p>Enhance your prompt with a single click! ✨</p>
       </center>
     </header>
     <div class="main">
       <textarea name="input" id="input" placeholder="Place your prompt here."></textarea>
+      <div class="custom-select">
+        <select id="framework-select">
+          <option disabled>Select Framework</option>
+          <option value="CREO">CREO - Creative Refinement Engine Output</option>
+          <option value="RACE">RACE - Reasoned Analytical Completion Engine</option>
+          <option value="CARE">CARE - Contextual Analytical Recommendation Engine</option>
+          <option value="APE">APE - Analysis Proposal Execution</option>
+          <option value="RISE">RISE - Recognition Interpretation Strategic Explanation</option>
+          <option value="TAG">TAG - Think Act Guide</option>
+          <option value="COAST">COAST - Clarify Organize Apply Summarize Test</option>
+          <option value="CREATE">CREATE — Collect Reason Execute Adjust Track Evaluate</option>
+        </select>
+        <div class="select-arrow"></div>
+      </div>
       <button class="enhance-button" id="enhance-button">Enhance</button>
-      <textarea name="output" id="output" placeholder="Your enhanced prompt will be here." disabled></textarea>
+      <div class="output-wrap">
+        <div
+          id="output"
+          class="output-area"
+          data-placeholder="Your enhanced prompt will be here."
+          aria-label="Enhanced prompt output"
+        ></div>
+        <button id="copy-button" type="button">Copy!</button>
+      </div>
     </div>
     <footer>
       &copy; 2026 All Rights Reserved
-    </footer>
+    </footer>git status
+    
   </main>
   <script src="popup.js"></script>
 </body>

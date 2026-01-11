@@ -2,21 +2,23 @@ const express = require("express");
 const router = express.Router();
 require('dotenv').config();
 const Groq = require('groq-sdk');
-const PROMPTIFY_SYSTEM_PROMPT = require('../../promptify-system-prompt');
+const returnSystemPromptBasedOnUserChoice = require("../../promptify-system-prompt");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-async function main(prompt) {
-  const chatCompletion = await getGroqChatCompletion(prompt);
+async function main(prompt, framework) {
+  const systemPrompt = await returnSystemPromptBasedOnUserChoice(framework);
+
+  const chatCompletion = await getGroqChatCompletion(prompt, systemPrompt);
   return chatCompletion;
 }
 
-async function getGroqChatCompletion(prompt) {
+async function getGroqChatCompletion(prompt, systemPrompt) {
   return groq.chat.completions.create({
     messages: [
       {
         role: "system",
-        content: PROMPTIFY_SYSTEM_PROMPT,
+        content: systemPrompt,
       },
       {
         role: "user",
@@ -28,9 +30,11 @@ async function getGroqChatCompletion(prompt) {
 }
 
 router.get("/", (req, res) => {
-  const prompt = req.query.prompt || "";
+  if(!(req.query.prompt && req.query.framework)) return;
+  const prompt = req.query.prompt;
+  const framework = req.query.framework || "";
 
-  main(prompt)
+  main(prompt, framework)
     .then((chatCompletion) => res.json(chatCompletion))
     .catch((err) =>
       res.status(500).json({ error: err.message || "Groq request failed" })

@@ -1,17 +1,21 @@
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "ENHANCE_TEXT") {
-    enhanceText(msg.text)
+    enhanceText(msg.text, msg.framework)
       .then((data) => sendResponse({ ok: true, data }))
       .catch((err) => sendResponse({ ok: false, error: err.message }));
     return true;
   }
 });
 
-async function enhanceText(text) {
+const URL = "https://promptify-azfb.onrender.com";
+// This is for development. It's stored here since there aren't .env files in Chrome Extensions.
+const URL_LCL = "http://localhost:6767"
+
+async function enhanceText(text, framework) {
   const res = await fetch(
-    `https://promptify-azfb.onrender.com/api/groq?prompt=${encodeURIComponent(
+    `${URL_LCL}/api/groq?prompt=${encodeURIComponent(
       text
-    )}`
+    )}&framework=${encodeURIComponent(framework)}`
   );
   return res.json();
 }

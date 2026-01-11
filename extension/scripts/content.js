@@ -1,5 +1,3 @@
-const ALLOWED = new Set(["chatgpt.com", "chat.openai.com", "claude.ai"]);
-
 function injectSideTab() {
   if (document.getElementById("promptify-root")) return;
 
@@ -58,6 +56,52 @@ function injectSideTab() {
           color: black;
         }
 
+        .custom-select {
+          position: relative;
+          width: 100%;
+        }
+
+        .custom-select select {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 100%;
+          font-size: 12px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          padding: 5px 10px;
+          background-color: #FFFFFF;
+          border: 2px solid #5CA2F6;
+          border-radius: 8px;
+          color: #000000 !important;
+          cursor: pointer;
+          outline: none;
+          box-shadow: 3px 3px 2px 0px #E2E2E2;
+        }
+
+        .custom-select select option {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .custom-select select:focus {
+          background: #F2F2F2;
+          border: 2px solid #5A7EC7;
+          border-radius: 8px;
+        }
+
+        .custom-select::after {
+          content: "";
+          position: absolute;
+          pointer-events: none;
+          top: 50%;
+          right: 10px;
+          transform: translate(0, -50%);
+          width: 12px;
+          height: 12px;
+          background-color: #000000;
+          clip-path: polygon(50% 80%, 0 20%, 100% 20%);
+        }
+
         #pf-enhance {
           width: 100%;
           background: #4cc0e6;
@@ -85,6 +129,20 @@ function injectSideTab() {
     <div class="wrapper">
       <div class="tab">PF</div>
       <div class="panel">
+        <div class="custom-select">
+          <select id="framework-select">
+            <option disabled>Select Framework</option>
+            <option value="CREO">CREO - Creative Refinement Engine Output</option>
+            <option value="RACE">RACE - Reasoned Analytical Completion Engine</option>
+            <option value="CARE">CARE - Contextual Analytical Recommendation Engine</option>
+            <option value="APE">APE - Analysis Proposal Execution</option>
+            <option value="RISE">RISE - Recognition Interpretation Strategic Explanation</option>
+            <option value="TAG">TAG - Think Act Guide</option>
+            <option value="COAST">COAST - Clarify Organize Apply Summarize Test</option>
+            <option value="CREATE">CREATE — Collect Reason Execute Adjust Track Evaluate</option>
+          </select>
+          <div class="select-arrow"></div>
+        </div>
         <button id="pf-enhance">Enhance & Replace</button>
       </div>
     </div>
@@ -100,13 +158,21 @@ function injectSideTab() {
   if (!enhanceButton) return;
   enhanceButton.addEventListener("click", () => {
     const input = getActiveInput();
-    console.log(input.children[0].innerText);
     if (!input) return;
-    const text = input.children[0].innerText;
+
+    const text = readInputText(input);
+    if (!text || !text.trim()) return;
+
+    const framework = shadow.getElementById("framework-select");
+    const frameworkValue = framework ? framework.value : "";
     chrome.runtime.sendMessage(
-      { type: "ENHANCE_TEXT", text: text },
-      (response) =>
-        (input.children[0].innerText = response.data.choices[0].message.content)
+      { type: "ENHANCE_TEXT", text, framework: frameworkValue },
+      (response) => {
+        if (!response || !response.ok) return;
+        const enhanced = response.data?.choices?.[0]?.message?.content;
+        if (!enhanced) return;
+        writeInputText(input, enhanced);
+      }
     );
   });
 }
@@ -114,11 +180,42 @@ function injectSideTab() {
 injectSideTab();
 
 function getActiveInput() {
-  return document.querySelector('#prompt-textarea') || document.querySelector('[contenteditable="true"]');
+  return (
+    document.querySelector("#prompt-textarea") ||
+    document.querySelector('textarea') ||
+    document.querySelector('[contenteditable="true"]')
+  );
 }
 
-function readInput(input) {
-  if (input.tagName === "TEXTAREA" || input.tagName === "INPUT")
-    return input.value;
+function readInputText(target) {
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    return target.value;
+  }
+  if (target.isContentEditable) {
+    return target.textContent || "";
+  }
   return "";
+}
+
+function writeInputText(target, value) {
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    const proto =
+      target instanceof HTMLInputElement
+        ? HTMLInputElement.prototype
+        : HTMLTextAreaElement.prototype;
+    const valueSetter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+    if (valueSetter) {
+      valueSetter.call(target, value);
+    } else {
+      target.value = value;
+    }
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+    target.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+
+  if (target.isContentEditable) {
+    target.textContent = value;
+    target.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  }
 }

@@ -1,5 +1,10 @@
 :root {
-  font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+body {
+  background-color: rgb(200, 239, 252);
 }
 
 img {
@@ -48,18 +53,163 @@ h1 {
   color: rgb(59, 130, 236);
 }
 
-textarea {
+textarea,
+.output-area {
   width: 100%;
-  resize: vertical;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   border: 1.5px solid #4cc0e6;
   border-radius: 8px;
+  background: #ffffff;
+  color: #000000;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
 }
 
 p {
   font-size: 13px;
 }
 
-textarea#input, textarea#output {
+textarea#input,
+.output-area {
   height: 100px;
+}
+
+.output-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.output-area {
+  padding: 8px 56px 8px 10px;
+  overflow-y: auto;
+}
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 5px 10px;
+  background-color: #ffffff;
+  border: 2px solid #5ca2f6;
+  border-radius: 8px;
+  color: #000000 !important;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 3px 3px 2px 0px #e2e2e2;
+}
+
+.custom-select select option {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-select select:focus {
+  background: #f2f2f2;
+  border: 2px solid #5a7ec7;
+  border-radius: 8px;
+}
+
+.custom-select::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  top: 50%;
+  right: 10px;
+  transform: translate(0, -50%);
+  width: 12px;
+  height: 12px;
+  background-color: #000000;
+  clip-path: polygon(50% 80%, 0 20%, 100% 20%);
+}
+
+#copy-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.output-area p {
+  margin: 0 0 8px;
+}
+
+.output-area p:last-child {
+  margin-bottom: 0;
+}
+
+.output-area h1,
+.output-area h2,
+.output-area h3,
+.output-area h4,
+.output-area h5,
+.output-area h6 {
+  margin: 0 0 8px;
+  color: #1e71b0;
+}
+
+.output-area pre {
+  margin: 0 0 8px;
+  padding: 8px;
+  border: 1px solid #c7e6f4;
+  border-radius: 6px;
+  background: #f6fbff;
+  overflow-x: auto;
+}
+
+.output-area code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #eef7fd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.output-area pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.output-area ul,
+.output-area ol {
+  margin: 0 0 8px 18px;
+  padding: 0;
+}
+
+.output-area li {
+  margin: 2px 0;
+}
+
+.output-area blockquote {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid #5ca2f6;
+  background: #f2f7ff;
+}
+
+.output-area a {
+  color: #1e71b0;
+  text-decoration: underline;
+}
+
+.output-area:empty::before {
+  content: attr(data-placeholder);
+  color: #6b7280;
+}
+
+.output-area .md-blank {
+  height: 10px;
 }
