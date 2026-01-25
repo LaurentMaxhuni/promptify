@@ -33,7 +33,3 @@ To run it locally:
 2. Install dependencies: `npm install`
 3. Copy `.env.example` to `.env` and set `GROQ_API_KEY`.
 4. Start the server: `npm start`
-
-## Notes
-- The backend uses your `GROQ_API_KEY` to create completions.
-- The extension will not return enhanced output unless the backend is running.
