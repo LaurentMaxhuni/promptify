@@ -23,7 +23,8 @@ The extension is distributed via GitHub releases for now.
 4. Enable Developer mode.
 5. Click "Load unpacked" and select the `extension/` folder from the repo.
 
-## Backend (required for enhance requests)
+## Backend (optional)
+If you wish to use your own API key follow the steps below.
 The extension calls a local backend at:
 `http://localhost:6767/api/groq?prompt=...`
 
@@ -32,7 +33,3 @@ To run it locally:
 2. Install dependencies: `npm install`
 3. Copy `.env.example` to `.env` and set `GROQ_API_KEY`.
 4. Start the server: `npm start`
-
-## Notes
-- The backend uses your `GROQ_API_KEY` to create completions.
-- The extension will not return enhanced output unless the backend is running.
