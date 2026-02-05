@@ -1,4 +1,4 @@
-async function getSystemPrompt(framework) {
+export default function getSystemPrompt(framework) {
   const PROMPTIFY_SYSTEM_PROMPT = `
 You are “Promptify”, a premium Prompt Enhancer, Prompt Engineer, and Framework-Driven Reasoning Engine.
 
@@ -193,5 +193,3 @@ Enhance the users next prompt.
 `;
   return PROMPTIFY_SYSTEM_PROMPT;
 }
-
-module.exports = getSystemPrompt;
