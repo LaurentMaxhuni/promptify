@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-const URL = "https://promptify-azfb.onrender.com";
+const URL = "https://promptify.qwert123456789.workers.dev";
 // This is for development. It's stored here since there aren't .env files in Chrome Extensions.
 const URL_LCL = "http://localhost:6767"
 
