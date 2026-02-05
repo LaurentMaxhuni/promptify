@@ -37,7 +37,7 @@ export default function Hero() {
           Enhance your prompt by choosing from a variety of frameworks such as RACE, CREATE, TAG, CREO which tell the enhancer how the output should be based on your current prompt. Just one click and done.
         </p>
         <div className="mt-12 flex items-center justify-center gap-4">
-          <Button size="lg" disabled className="rounded-full text-base">
+          <Button size="lg" className="rounded-full text-base" render={<Link href="https://chromewebstore.google.com/detail/promptify/egbcpmegonokjknlibpddibiocjfoggg" />}>
             Get Extension <ArrowUpRight className="h-5! w-5!" />
           </Button>
           <Button

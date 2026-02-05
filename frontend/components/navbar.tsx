@@ -15,7 +15,7 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           <Button asChild className="rounded-full">
-            <Link href="#">Get Promptify</Link>
+            <Link href="https://chromewebstore.google.com/detail/promptify/egbcpmegonokjknlibpddibiocjfoggg">Get Promptify</Link>
           </Button>
 
           {/* Mobile Menu */}
