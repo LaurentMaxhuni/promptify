@@ -165,24 +165,25 @@ $uploadResponse = Invoke-RestMethod `
 Write-Host "Upload response:"
 $uploadResponse | ConvertTo-Json -Depth 10
 
-if (-not $SkipPublish) {
-    Write-Host "Submitting item for review"
-    $publishResponse = Invoke-RestMethod `
-        -Method Post `
-        -Uri $publishUri `
+try {
+    if (-not $SkipPublish) {
+        Write-Host "Submitting item for review"
+        $publishResponse = Invoke-RestMethod `
+            -Method Post `
+            -Uri $publishUri `
+            -Headers $headers
+
+        Write-Host "Publish response:"
+        $publishResponse | ConvertTo-Json -Depth 10
+    }
+}
+finally {
+    Write-Host "Fetching latest item status"
+    $statusResponse = Invoke-RestMethod `
+        -Method Get `
+        -Uri $statusUri `
         -Headers $headers
 
-    Write-Host "Publish response:"
-    $publishResponse | ConvertTo-Json -Depth 10
+    Write-Host "Status response:"
+    $statusResponse | ConvertTo-Json -Depth 10
 }
-
-Write-Host "Fetching latest item status"
-$statusResponse = Invoke-RestMethod `
-    -Method Get `
-    -Uri $statusUri `
-    -Headers $headers
-
-Write-Host "Status response:"
-$statusResponse | ConvertTo-Json -Depth 10
-
-
