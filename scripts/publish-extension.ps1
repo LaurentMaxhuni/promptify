@@ -80,11 +80,13 @@ function New-ServiceAccountAccessToken {
     $rsa = [System.Security.Cryptography.RSA]::Create()
 
     try {
-        if (-not $rsa.GetType().GetMethod("ImportFromPem", [Type[]]@([string]))) {
+        try {
+            $rsa.ImportFromPem($privateKey)
+        }
+        catch [System.Management.Automation.MethodException] {
             throw "This script requires PowerShell 7+ for service-account key import. Run it in pwsh or use the GitHub Actions workflow."
         }
 
-        $rsa.ImportFromPem($privateKey)
         $signatureBytes = $rsa.SignData(
             [System.Text.Encoding]::UTF8.GetBytes($unsignedJwt),
             [System.Security.Cryptography.HashAlgorithmName]::SHA256,
@@ -182,4 +184,5 @@ $statusResponse = Invoke-RestMethod `
 
 Write-Host "Status response:"
 $statusResponse | ConvertTo-Json -Depth 10
+
 
