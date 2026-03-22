@@ -5,6 +5,14 @@
   <meta charset="utf-8">
   <title>Promptify</title>
   <link rel="stylesheet" href="popup.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
@@ -18,10 +26,17 @@
       </center>
     </header>
     <div class="main">
-      <textarea name="input" id="input" placeholder="Place your prompt here."></textarea>
+      <div
+        id="input"
+        class="input-area"
+        contenteditable="plaintext-only"
+        data-placeholder="Place your prompt here."
+        role="textbox"
+        aria-label="Prompt input"
+        aria-multiline="true"></div>
       <div class="custom-select">
         <select id="framework-select">
-          <option disabled>Select Framework</option>
+          <option value="" selected disabled>Select Framework</option>
           <option value="CREO">CREO - Creative Refinement Engine Output</option>
           <option value="RACE">RACE - Reasoned Analytical Completion Engine</option>
           <option value="CARE">CARE - Contextual Analytical Recommendation Engine</option>
@@ -31,19 +46,50 @@
           <option value="COAST">COAST - Clarify Organize Apply Summarize Test</option>
           <option value="CREATE">CREATE — Collect Reason Execute Adjust Track Evaluate</option>
         </select>
-        <div class="select-arrow"></div>
       </div>
-      <button class="enhance-button" id="enhance-button">Enhance</button>
+      <div class="action-row">
+        <button class="enhance-button" id="enhance-button">Enhance</button>
+        <button
+          id="history-toggle-button"
+          class="secondary-button history-toggle-button"
+          type="button"
+          aria-controls="history-sidebar"
+          aria-expanded="false">Chats</button>
+      </div>
       <div class="output-wrap">
-        <div
-          id="output"
-          class="output-area"
-          data-placeholder="Your enhanced prompt will be here."
-          aria-label="Enhanced prompt output"
-        ></div>
-        <button id="copy-button" type="button">Copy!</button>
+        <div id="output" class="output-area" data-placeholder="Your enhanced prompt will be here."
+          aria-label="Enhanced prompt output"></div>
+        <button id="copy-button" type="button">
+          <svg id='Copy_24' width='20' height='20' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'
+            xmlns:xlink='http://www.w3.org/1999/xlink'>
+            <rect width='24' height='24' stroke='none' fill='#000000' opacity='0' />
+          
+          
+            <g transform="matrix(1 0 0 1 12 12)">
+              <path
+                style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;"
+                transform=" translate(-12, -12)"
+                d="M 4 2 C 2.895 2 2 2.895 2 4 L 2 18 L 4 18 L 4 4 L 18 4 L 18 2 L 4 2 z M 8 6 C 6.895 6 6 6.895 6 8 L 6 20 C 6 21.105 6.895 22 8 22 L 20 22 C 21.105 22 22 21.105 22 20 L 22 8 C 22 6.895 21.105 6 20 6 L 8 6 z M 8 8 L 20 8 L 20 20 L 8 20 L 8 8 z"
+                stroke-linecap="round" />
+            </g>
+          </svg>
+        </button>
       </div>
     </div>
+    <div id="history-backdrop" class="history-backdrop" aria-hidden="true"></div>
+    <aside id="history-sidebar" class="history-sidebar" aria-labelledby="history-title" aria-hidden="true">
+      <div class="history-sidebar-header">
+        <div>
+          <h2 id="history-title">Saved Chats</h2>
+          <p class="history-sidebar-subtitle">Open a previous prompt and response.</p>
+        </div>
+        <button id="history-close-button" class="secondary-button history-close-button" type="button">Close</button>
+      </div>
+      <div class="history-sidebar-actions">
+        <button id="load-history-button" class="secondary-button" type="button">Load Chats</button>
+      </div>
+      <div id="history-list" class="history-list" data-placeholder="No saved chats yet."></div>
+    </aside>
     <footer>
       &copy; 2026 All Rights Reserved
     </footer>

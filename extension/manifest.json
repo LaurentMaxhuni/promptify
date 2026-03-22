@@ -1,8 +1,9 @@
 {
   "name": "Promptify",
   "description": "Enhance your prompt with a single click.",
-  "version": "1.1",
+  "version": "1.2",
   "manifest_version": 3,
+  "permissions": ["storage"],
   "host_permissions": ["https://api.groq.com/*"],
   "action": {
     "default_popup": "popup/popup.html",
@@ -28,7 +29,14 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*",
         "https://grok.com/*",
-        "https://*.canva.com/*"
+        "https://*.canva.com/*",
+        "https://www.perplexity.ai/*",
+        "https://poe.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://chat.deepseek.com/*",
+        "https://chat.mistral.ai/*",
+        "https://www.meta.ai/*",
+        "https://meta.ai/*"
       ]
     }
   ],
