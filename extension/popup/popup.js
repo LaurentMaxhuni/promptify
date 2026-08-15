@@ -1,4 +1,5 @@
 const enhanceButton = document.getElementById('enhance-button');
+const enhanceLabel = document.getElementById('enhance-label');
 const input = document.getElementById('input');
 const output = document.getElementById('output');
 const framework = document.getElementById('framework-select');
@@ -8,44 +9,143 @@ const historyCloseButton = document.getElementById('history-close-button');
 const historyBackdrop = document.getElementById('history-backdrop');
 const historySidebar = document.getElementById('history-sidebar');
 const loadHistoryButton = document.getElementById('load-history-button');
+const clearHistoryButton = document.getElementById('clear-history-button');
 const historyList = document.getElementById('history-list');
+const statusMessage = document.getElementById('status-message');
+const retryButton = document.getElementById('retry-button');
 const CHAT_HISTORY_KEY = 'chatHistory';
 const PREFERRED_FRAMEWORK_KEY = 'preferredFramework';
+const MAX_HISTORY_ENTRIES = 50;
+const MAX_HISTORY_BYTES = 250_000;
 let lastEnhanced = '';
+let lastEnhancedInput = '';
 let chatHistory = [];
+let historyReturnFocus = null;
 
-input.addEventListener('input', syncInputState);
+// ── Loading text cycling (like Claude Code) ──
+const LOADING_WORDS = [
+  'Refining',
+  'Optimizing',
+  'Polishing',
+  'Enhancing',
+  'Crafting',
+  'Structuring',
+  'Improving',
+  'Sharpening'
+];
+let loadingInterval = null;
+let currentLoadingIdx = 0;
+
+function startLoadingState() {
+  enhanceButton.disabled = true;
+  currentLoadingIdx = 0;
+  enhanceLabel.textContent = LOADING_WORDS[0] + '...';
+
+  loadingInterval = setInterval(() => {
+    currentLoadingIdx = (currentLoadingIdx + 1) % LOADING_WORDS.length;
+    enhanceLabel.textContent = LOADING_WORDS[currentLoadingIdx] + '...';
+  }, 800);
+}
+
+function stopLoadingState() {
+  if (loadingInterval) {
+    clearInterval(loadingInterval);
+    loadingInterval = null;
+  }
+  enhanceButton.disabled = false;
+  enhanceLabel.textContent = 'Optimize';
+}
+
+input.addEventListener('input', () => {
+  syncInputState();
+  invalidateEnhancedResult();
+});
 input.addEventListener('paste', (event) => {
   event.preventDefault();
   const text = event.clipboardData?.getData('text/plain') ?? '';
   document.execCommand('insertText', false, text);
 });
 
-enhanceButton.addEventListener('click', () => {
-  const text = getInputText();
-  if (!text.trim()) return;
-
-  chrome.runtime.sendMessage(
-    { type: "ENHANCE_TEXT", text, framework: framework.value},
-    async (response) => {
-      const enhanced = response?.data?.choices?.[0]?.message?.content;
-      const cleaned = sanitizeEnhancedPrompt(enhanced);
-      if (!cleaned) return;
-
-      lastEnhanced = cleaned;
-      output.textContent = cleaned;
-      await addHistoryEntry({
-        prompt: text,
-        response: cleaned,
-        framework: framework.value || '',
-        createdAt: Date.now()
-      });
-    }
-  );
+enhanceButton.addEventListener('click', async () => {
+  await enhanceCurrentPrompt();
 });
 
+retryButton.addEventListener('click', async () => {
+  await enhanceCurrentPrompt();
+});
+
+async function enhanceCurrentPrompt() {
+  const text = getInputText();
+  if (!text.trim()) {
+    setStatusMessage('Enter a prompt before optimizing.', 'error');
+    input.focus();
+    return;
+  }
+
+  const frameworkValue = framework.value;
+
+  startLoadingState();
+  setStatusMessage('Optimizing your prompt...', 'loading');
+  retryButton.hidden = true;
+
+  try {
+    const response = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: "ENHANCE_TEXT", text, framework: frameworkValue },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          resolve(response);
+        }
+      );
+    });
+
+    if (!response?.ok) {
+      const error = response?.error;
+      throw new Error(
+        typeof error === 'object' ? error.message : error || 'Enhancement request failed.',
+      );
+    }
+
+    if (getInputText() !== text || framework.value !== frameworkValue) {
+      setStatusMessage('The prompt changed while it was being optimized. Run it again.', 'error');
+      retryButton.hidden = false;
+      return;
+    }
+
+    const enhanced = response?.data?.choices?.[0]?.message?.content;
+    const cleaned = sanitizeEnhancedPrompt(enhanced);
+    if (!cleaned) throw new Error('No enhanced prompt returned');
+
+    lastEnhanced = cleaned;
+    lastEnhancedInput = text;
+    output.textContent = cleaned;
+    const saved = await addHistoryEntry({
+      prompt: text,
+      response: cleaned,
+      framework: frameworkValue || '',
+      createdAt: Date.now()
+    });
+
+    retryButton.hidden = true;
+    setStatusMessage(
+      saved ? 'Prompt optimized.' : 'Prompt optimized, but it could not be saved to history.',
+      saved ? 'success' : 'error',
+    );
+  } catch (error) {
+    console.error('Enhance failed', error);
+    setStatusMessage(error.message || 'Enhancement failed. Try again.', 'error');
+    retryButton.hidden = false;
+  } finally {
+    stopLoadingState();
+  }
+}
+
 copyButton.addEventListener('click', async () => {
-  const text = lastEnhanced || getInputText();
+  const currentInput = getInputText();
+  const text = lastEnhanced && lastEnhancedInput === currentInput ? lastEnhanced : currentInput;
   if (!text.trim()) return;
 
   const copied = await copyText(text);
@@ -65,6 +165,7 @@ loadHistoryButton.addEventListener('click', async () => {
 });
 
 framework.addEventListener('change', async () => {
+  invalidateEnhancedResult();
   await savePreferredFramework(framework.value);
 });
 
@@ -86,12 +187,27 @@ historyBackdrop.addEventListener('click', () => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (!historySidebar.classList.contains('is-open')) return;
+
   if (event.key === 'Escape') {
+    event.preventDefault();
     setHistorySidebarOpen(false);
+    return;
+  }
+
+  if (event.key === 'Tab') {
+    trapHistoryFocus(event);
   }
 });
 
 historyList.addEventListener('click', (event) => {
+  const deleteTrigger = event.target.closest('[data-history-delete-index]');
+  if (deleteTrigger) {
+    const deleteIndex = Number(deleteTrigger.dataset.historyDeleteIndex);
+    if (!Number.isNaN(deleteIndex)) deleteHistoryEntry(deleteIndex);
+    return;
+  }
+
   const trigger = event.target.closest('[data-history-index]');
   if (!trigger) return;
 
@@ -100,6 +216,8 @@ historyList.addEventListener('click', (event) => {
 
   openHistoryEntry(index);
 });
+
+clearHistoryButton.addEventListener('click', clearHistory);
 
 function getInputText() {
   return (input.innerText || '').replace(/\r\n?/g, '\n').replace(/\n$/, '');
@@ -111,6 +229,7 @@ function syncInputState() {
 
 syncInputState();
 copyButton.setAttribute('aria-label', 'Copy output');
+initializeHistorySidebar();
 renderHistory();
 initializePreferredFramework();
 
@@ -141,7 +260,7 @@ async function copyText(text) {
 }
 
 async function addHistoryEntry(entry) {
-  if (!chrome.storage?.local) return;
+  if (!chrome.storage?.local) return false;
 
   try {
     const existing = await chrome.storage.local.get(CHAT_HISTORY_KEY);
@@ -149,12 +268,20 @@ async function addHistoryEntry(entry) {
       ? existing[CHAT_HISTORY_KEY]
       : [];
 
-    history.unshift(entry);
-    await chrome.storage.local.set({ [CHAT_HISTORY_KEY]: history });
-    chatHistory = history;
+    const normalizedEntry = normalizeHistoryEntry(entry);
+    const nextHistory = limitHistory([normalizedEntry, ...history]);
+    if (!normalizedEntry || !nextHistory[0] || nextHistory[0].prompt !== normalizedEntry.prompt || nextHistory[0].response !== normalizedEntry.response) {
+      console.error('History entry exceeded the storage limit');
+      return false;
+    }
+
+    await chrome.storage.local.set({ [CHAT_HISTORY_KEY]: nextHistory });
+    chatHistory = nextHistory;
     renderHistory();
+    return true;
   } catch (error) {
     console.error('Failed to save chat history', error);
+    return false;
   }
 }
 
@@ -178,12 +305,19 @@ async function initializePreferredFramework() {
 }
 
 async function savePreferredFramework(value) {
-  if (!chrome.storage?.local || typeof value !== 'string' || !value) return;
+  if (!chrome.storage?.local || typeof value !== 'string') return false;
 
   try {
-    await chrome.storage.local.set({ [PREFERRED_FRAMEWORK_KEY]: value });
+    if (value) {
+      await chrome.storage.local.set({ [PREFERRED_FRAMEWORK_KEY]: value });
+    } else {
+      await chrome.storage.local.remove(PREFERRED_FRAMEWORK_KEY);
+    }
+    return true;
   } catch (error) {
     console.error('Failed to save preferred framework', error);
+    setStatusMessage('Your framework preference could not be saved.', 'error');
+    return false;
   }
 }
 
@@ -199,9 +333,13 @@ async function refreshHistory() {
     }
 
     const stored = await chrome.storage.local.get(CHAT_HISTORY_KEY);
-    chatHistory = Array.isArray(stored[CHAT_HISTORY_KEY])
+    const storedHistory = Array.isArray(stored[CHAT_HISTORY_KEY])
       ? stored[CHAT_HISTORY_KEY]
       : [];
+    chatHistory = limitHistory(storedHistory);
+    if (chatHistory.length !== storedHistory.length) {
+      await chrome.storage.local.set({ [CHAT_HISTORY_KEY]: chatHistory });
+    }
     renderHistory();
   } catch (error) {
     console.error('Failed to load chat history', error);
@@ -240,7 +378,10 @@ function renderHistory(message) {
           </div>
           <p class="history-prompt">${promptPreview || 'No prompt saved.'}</p>
           <p class="history-response">${responsePreview || 'No response saved.'}</p>
-          <button class="history-open-button" type="button" data-history-index="${index}">Open</button>
+          <div class="history-item-actions">
+            <button class="history-open-button" type="button" data-history-index="${index}">Open</button>
+            <button class="history-delete-button" type="button" data-history-delete-index="${index}">Delete</button>
+          </div>
         </article>
       `;
     })
@@ -261,8 +402,74 @@ function openHistoryEntry(index) {
   }
 
   lastEnhanced = entry.response || '';
+  lastEnhancedInput = entry.prompt || '';
   output.textContent = lastEnhanced || '';
+  setStatusMessage('Saved prompt opened.', 'success');
   setHistorySidebarOpen(false);
+}
+
+async function deleteHistoryEntry(index) {
+  if (!chrome.storage?.local || !chatHistory[index]) return;
+
+  try {
+    chatHistory = chatHistory.filter((_, entryIndex) => entryIndex !== index);
+    await chrome.storage.local.set({ [CHAT_HISTORY_KEY]: chatHistory });
+    renderHistory();
+    setStatusMessage('Saved prompt deleted.', 'success');
+  } catch (error) {
+    console.error('Failed to delete chat history entry', error);
+    setStatusMessage('The saved prompt could not be deleted.', 'error');
+    await refreshHistory();
+  }
+}
+
+async function clearHistory() {
+  if (!chatHistory.length || !chrome.storage?.local) return;
+  if (!window.confirm('Clear all saved prompts and responses?')) return;
+
+  try {
+    await chrome.storage.local.remove(CHAT_HISTORY_KEY);
+    chatHistory = [];
+    renderHistory();
+    setStatusMessage('History cleared.', 'success');
+  } catch (error) {
+    console.error('Failed to clear chat history', error);
+    setStatusMessage('History could not be cleared.', 'error');
+  }
+}
+
+function limitHistory(history) {
+  const limited = [];
+  let totalBytes = 0;
+
+  for (const entry of history) {
+    const normalized = normalizeHistoryEntry(entry);
+    if (!normalized || limited.length >= MAX_HISTORY_ENTRIES) continue;
+
+    const entryBytes = getUtf8ByteLength(JSON.stringify(normalized));
+    if (totalBytes + entryBytes > MAX_HISTORY_BYTES) break;
+
+    limited.push(normalized);
+    totalBytes += entryBytes;
+  }
+
+  return limited;
+}
+
+function normalizeHistoryEntry(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  if (typeof entry.prompt !== 'string' || typeof entry.response !== 'string') return null;
+
+  return {
+    prompt: entry.prompt,
+    response: entry.response,
+    framework: typeof entry.framework === 'string' ? entry.framework : '',
+    createdAt: Number.isFinite(Number(entry.createdAt)) ? Number(entry.createdAt) : Date.now(),
+  };
+}
+
+function getUtf8ByteLength(value) {
+  return new TextEncoder().encode(value).byteLength;
 }
 
 function truncateText(text, maxLength) {
@@ -293,12 +500,87 @@ function cssEscape(value) {
   return String(value).replace(/["\\]/g, '\\$&');
 }
 
+function initializeHistorySidebar() {
+  historySidebar.hidden = true;
+  historyBackdrop.hidden = true;
+  historySidebar.inert = true;
+  historyBackdrop.inert = true;
+  historySidebar.setAttribute('aria-hidden', 'true');
+  historyBackdrop.setAttribute('aria-hidden', 'true');
+}
+
 function setHistorySidebarOpen(isOpen) {
+  const wasOpen = historySidebar.classList.contains('is-open');
+  if (isOpen && !wasOpen) {
+    historyReturnFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : historyToggleButton;
+  }
+
   historySidebar.classList.toggle('is-open', isOpen);
   historyBackdrop.classList.toggle('is-open', isOpen);
+  if (isOpen) {
+    historySidebar.hidden = false;
+    historyBackdrop.hidden = false;
+    historySidebar.inert = false;
+    historyBackdrop.inert = false;
+  }
+
   historySidebar.setAttribute('aria-hidden', String(!isOpen));
   historyBackdrop.setAttribute('aria-hidden', String(!isOpen));
   historyToggleButton.setAttribute('aria-expanded', String(isOpen));
+
+  if (!isOpen) {
+    historySidebar.hidden = true;
+    historyBackdrop.hidden = true;
+    historySidebar.inert = true;
+    historyBackdrop.inert = true;
+    const focusTarget = historyReturnFocus;
+    historyReturnFocus = null;
+    if (focusTarget?.isConnected) {
+      focusTarget.focus();
+    } else {
+      historyToggleButton.focus();
+    }
+    return;
+  }
+
+  window.requestAnimationFrame(() => historyCloseButton.focus());
+}
+
+function trapHistoryFocus(event) {
+  const focusable = [...historySidebar.querySelectorAll(
+    'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )].filter((element) => !element.hasAttribute('hidden'));
+
+  if (!focusable.length) {
+    event.preventDefault();
+    historyCloseButton.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function invalidateEnhancedResult() {
+  if (!lastEnhanced && !lastEnhancedInput) return;
+  lastEnhanced = '';
+  lastEnhancedInput = '';
+  output.textContent = '';
+}
+
+function setStatusMessage(message, state = 'info') {
+  statusMessage.textContent = message || '';
+  statusMessage.dataset.state = state;
+  statusMessage.hidden = !message;
 }
 
 function sanitizeEnhancedPrompt(text) {

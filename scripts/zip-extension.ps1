@@ -1,6 +1,7 @@
 param(
     [string]$ExtensionDir = (Join-Path $PSScriptRoot "..\extension"),
-    [string]$OutputDir = (Join-Path $PSScriptRoot "..\artifacts")
+    [string]$OutputDir = (Join-Path $PSScriptRoot "..\artifacts"),
+    [string]$ApiToken = $env:PROMPTIFY_API_TOKEN
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,6 +31,19 @@ New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
 
 try {
     Copy-Item -Path (Join-Path $resolvedExtensionDir "*") -Destination $stagingDir -Recurse -Force
+
+    if ([string]::IsNullOrWhiteSpace($ApiToken)) {
+        throw "Set PROMPTIFY_API_TOKEN before packaging the extension."
+    }
+
+    $backgroundPath = Join-Path $stagingDir "background.js"
+    $background = Get-Content $backgroundPath -Raw
+    if (-not $background.Contains("__PROMPTIFY_API_TOKEN__")) {
+        throw "The extension background script does not contain the API token placeholder."
+    }
+
+    $background = $background.Replace("__PROMPTIFY_API_TOKEN__", $ApiToken)
+    Set-Content -Path $backgroundPath -Value $background -Encoding UTF8 -NoNewline
 
     if (Test-Path $archivePath) {
         Remove-Item $archivePath -Force

@@ -1,77 +1,116 @@
+"use client";
+
+import { motion } from "framer-motion";
 import {
-  ClipboardCopy,
-  Globe,
+  Sparkles,
+  SlidersHorizontal,
   PanelRightOpen,
   Replace,
-  SlidersHorizontal,
-  Sparkles,
+  ClipboardCopy,
+  Globe,
 } from "lucide-react";
+import { useRef } from "react";
 
 const features = [
   {
     icon: Sparkles,
-    title: "One-Click Prompt Boost",
-    description:
-      "Turn rough prompts into clear, usable instructions in seconds.",
+    title: "One-Click Boost",
+    description: "Turn rough prompts into clear, usable instructions in seconds.",
+    span: "col-span-1 row-span-1",
   },
   {
     icon: SlidersHorizontal,
-    title: "Framework-Driven Refinement",
-    description:
-      "Choose CREO, RACE, CARE, TAG, and more to guide the output style.",
+    title: "Framework-Driven",
+    description: "Choose CREO, RACE, CARE, TAG, and more to guide the output.",
+    span: "col-span-1 row-span-1",
   },
   {
     icon: PanelRightOpen,
-    title: "Inline Side Panel",
-    description:
-      "Open the tab on supported sites and enhance without leaving the page.",
+    title: "Inline Panel",
+    description: "Enhance prompts on ChatGPT, Claude, Gemini, and Grok without leaving the page.",
+    span: "col-span-2 row-span-1",
   },
   {
     icon: Replace,
-    title: "Enhance and Replace",
-    description:
-      "Rewrite the active input and drop the improved prompt right where you type.",
+    title: "Enhance & Replace",
+    description: "Rewrite the active input with the improved prompt right where you type.",
+    span: "col-span-1 row-span-1",
   },
   {
     icon: ClipboardCopy,
     title: "Copy-Ready Output",
-    description:
-      "Use the popup to review and copy a formatted prompt fast.",
-  },
-  {
-    icon: Globe,
-    title: "Multi-Site Support",
-    description:
-      "Works on ChatGPT, Claude, Gemini, Grok, and Canva out of the box.",
+    description: "Review and copy a clean, formatted prompt from the popup.",
+    span: "col-span-1 row-span-1",
   },
 ];
 
-const Features = () => {
-  return (
-    <div id="features" className="min-h-screen flex items-center justify-center py-12">
-      <div>
-        <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight text-center">
-          Unleash Your Creativity
-        </h2>
-        <div className="mt-10 sm:mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-(--breakpoint-lg) mx-auto px-6">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="flex flex-col border rounded-xl py-6 px-5"
-            >
-              <div className="mb-4 h-10 w-10 flex items-center justify-center bg-muted rounded-full">
-                <feature.icon className="size-5" />
-              </div>
-              <span className="text-lg font-semibold">{feature.title}</span>
-              <p className="mt-1 text-foreground/80 text-[15px]">
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
 };
 
-export default Features;
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] as const },
+  },
+};
+
+export default function Features() {
+  const ref = useRef(null);
+
+  return (
+    <section
+      id="features"
+      className="relative py-32 md:py-48 px-6 overflow-hidden"
+    >
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-semibold tracking-[-0.03em]">
+            Everything you need
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
+            Prompt enhancement that fits seamlessly into your workflow.
+          </p>
+        </motion.div>
+
+        <motion.div
+          ref={ref}
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-2 md:grid-cols-3 gap-3 auto-rows-[1fr]"
+          style={{ gridAutoFlow: "dense" }}
+        >
+          {features.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={itemVariants}
+              className={`group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 md:p-8 transition-all duration-500 hover:border-primary/20 hover:bg-primary/[0.02] ${feature.span}`}
+            >
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <feature.icon className="size-5" />
+              </div>
+              <h3 className="text-lg font-semibold mb-1.5">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {feature.description}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}

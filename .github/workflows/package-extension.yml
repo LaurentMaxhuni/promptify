@@ -17,6 +17,8 @@ jobs:
       - name: Create extension zip
         shell: pwsh
         run: ./scripts/zip-extension.ps1
+        env:
+          PROMPTIFY_API_TOKEN: ${{ secrets.PROMPTIFY_API_TOKEN }}
 
       - name: Upload packaged zip
         uses: actions/upload-artifact@v4

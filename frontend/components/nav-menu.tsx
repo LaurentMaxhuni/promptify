@@ -16,13 +16,19 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
-export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
+type NavMenuProps = ComponentProps<typeof NavigationMenu> & {
+  onNavigate?: () => void;
+};
+
+export const NavMenu = ({ onNavigate, ...props }: NavMenuProps) => (
   <NavigationMenu {...props}>
     <NavigationMenuList className="space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start data-[orientation=vertical]:justify-start">
       {navLinks.map((link) => (
         <NavigationMenuItem key={link.label}>
           <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-            <Link href={link.href}>{link.label}</Link>
+            <Link href={link.href} onClick={onNavigate}>
+              {link.label}
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
       ))}

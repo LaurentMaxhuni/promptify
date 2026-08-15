@@ -1,5 +1,20 @@
 const ROOT_ID = "promptify-send-action";
 const PREFERRED_FRAMEWORK_KEY = "preferredFramework";
+
+// ── Loading text cycling ──
+const LOADING_WORDS = [
+  'Refining',
+  'Optimizing',
+  'Polishing',
+  'Enhancing',
+  'Crafting',
+  'Structuring',
+  'Improving',
+  'Sharpening'
+];
+let loadingInterval = null;
+let currentLoadingIdx = 0;
+
 const SITE_CONFIGS = {
   "chatgpt.com": {
     prompt: [
@@ -154,6 +169,7 @@ const SITE_CONFIGS = {
 let host = null;
 let shadowRootRef = null;
 let optimizeButton = null;
+let optimizeLabel = null;
 let currentPrompt = null;
 let currentSendButton = null;
 let observer = null;
@@ -195,31 +211,37 @@ function ensureUi() {
   shadowRootRef.innerHTML = `
     <style>
       :host {
-        all: initial;
+        display: flex;
+        justify-content: flex-start;
+        pointer-events: none;
       }
 
       .shell {
-        display: inline-flex;
         pointer-events: none;
-        font-family: Inter, "Segoe UI", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+        padding-top: 6px;
       }
 
       .optimize-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
+        gap: 6px;
+        width: auto;
+        min-width: 130px;
         height: 34px;
-        padding: 0;
-        border: 1px solid rgba(255, 255, 255, 0.22);
+        padding: 0 18px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 999px;
-        background: rgba(17, 24, 39, 0.72);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(17, 24, 39, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         color: #ffffff;
+        font-size: 13px;
+        font-weight: 500;
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.08),
-          0 10px 24px rgba(2, 6, 23, 0.22);
+          0 6px 16px rgba(2, 6, 23, 0.25);
         cursor: pointer;
         pointer-events: auto;
         transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
@@ -227,11 +249,11 @@ function ensureUi() {
 
       .optimize-button:hover {
         transform: translateY(-1px);
-        background: rgba(30, 41, 59, 0.84);
-        border-color: rgba(255, 255, 255, 0.34);
+        background: rgba(30, 41, 59, 0.88);
+        border-color: rgba(255, 255, 255, 0.28);
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.12),
-          0 12px 28px rgba(2, 6, 23, 0.26);
+          0 8px 20px rgba(2, 6, 23, 0.3);
       }
 
       .optimize-button:active {
@@ -240,22 +262,30 @@ function ensureUi() {
 
       .optimize-button:disabled {
         cursor: wait;
-        opacity: 0.82;
+        opacity: 0.7;
         transform: none;
       }
 
       .optimize-button[data-state="success"] {
-        background: rgba(8, 145, 178, 0.82);
+        background: rgba(22, 163, 74, 0.85);
+        border-color: rgba(22, 163, 74, 0.4);
       }
 
       .optimize-button[data-state="error"] {
-        background: rgba(185, 28, 28, 0.76);
+        background: rgba(220, 38, 38, 0.8);
+        border-color: rgba(220, 38, 38, 0.4);
       }
 
       .icon {
         width: 16px;
         height: 16px;
         flex: 0 0 auto;
+      }
+
+      .label {
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
       }
     </style>
     <div class="shell">
@@ -264,11 +294,13 @@ function ensureUi() {
           <path d="M12 3.5L13.9 8.1L18.5 10L13.9 11.9L12 16.5L10.1 11.9L5.5 10L10.1 8.1L12 3.5Z" fill="currentColor"></path>
           <path d="M18.5 14.5L19.4 16.6L21.5 17.5L19.4 18.4L18.5 20.5L17.6 18.4L15.5 17.5L17.6 16.6L18.5 14.5Z" fill="currentColor" opacity="0.9"></path>
         </svg>
+        <span class="label">Optimize</span>
       </button>
     </div>
   `;
 
   optimizeButton = shadowRootRef.querySelector(".optimize-button");
+  optimizeLabel = shadowRootRef.querySelector(".label");
   optimizeButton.addEventListener("click", async () => {
     await handleOptimizeClick();
   });
@@ -288,9 +320,7 @@ function mountOptimizeButton() {
   ensureUi();
 
   const prompt = findPromptTarget();
-  const sendButton = prompt ? findSendButton(prompt) : null;
-
-  if (!prompt || !sendButton || !sendButton.parentElement) {
+  if (!prompt) {
     detachUi();
     currentPrompt = null;
     currentSendButton = null;
@@ -298,19 +328,23 @@ function mountOptimizeButton() {
   }
 
   currentPrompt = prompt;
-  currentSendButton = sendButton;
 
-  const mountParent = sendButton.parentElement;
-  if (host.parentElement !== mountParent || host.nextSibling !== sendButton) {
-    mountParent.insertBefore(host, sendButton);
-  } else if (!host.isConnected) {
-    mountParent.insertBefore(host, sendButton);
+  // Find the form or the outermost composer container, then insert AFTER it.
+  // This guarantees the button sits OUTSIDE any flex/grid row so it's always
+  // below the textbox, never beside or overlapping it.
+  const container = prompt.closest('form') || prompt.parentElement;
+  if (!container || !container.parentNode) {
+    detachUi();
+    return;
   }
 
-  host.style.display = "inline-flex";
-  host.style.flex = "0 0 auto";
-  host.style.alignSelf = "center";
-  host.style.margin = "0 8px 0 0";
+  const nextEl = container.nextSibling;
+  if (host.parentElement !== container.parentNode || host.nextSibling !== nextEl) {
+    container.parentNode.insertBefore(host, nextEl);
+  } else if (!host.isConnected) {
+    container.parentNode.insertBefore(host, nextEl);
+  }
+
   host.style.pointerEvents = "none";
 }
 
@@ -479,7 +513,7 @@ async function handleOptimizeClick() {
     return;
   }
 
-  setButtonState("loading");
+  startLoadingState();
 
   try {
     const framework = await getPreferredFramework();
@@ -492,11 +526,42 @@ async function handleOptimizeClick() {
 
     await replacePromptContent(prompt, enhanced);
     focusPrompt(prompt);
-    flashButtonState("success");
+    setButtonState("success");
+    stopLoadingState();
+    window.clearTimeout(optimizeButton._promptifyResetTimer);
+    optimizeButton._promptifyResetTimer = window.setTimeout(() => {
+      setButtonState("");
+    }, 1200);
   } catch (error) {
     console.error("Promptify optimize failed", error);
-    flashButtonState("error");
+    setButtonState("error");
+    stopLoadingState();
+    window.clearTimeout(optimizeButton._promptifyResetTimer);
+    optimizeButton._promptifyResetTimer = window.setTimeout(() => {
+      setButtonState("");
+    }, 1200);
   }
+}
+
+function startLoadingState() {
+  if (!optimizeButton || !optimizeLabel) return;
+  optimizeButton.disabled = true;
+  currentLoadingIdx = 0;
+  optimizeLabel.textContent = LOADING_WORDS[0] + '...';
+
+  loadingInterval = setInterval(() => {
+    currentLoadingIdx = (currentLoadingIdx + 1) % LOADING_WORDS.length;
+    optimizeLabel.textContent = LOADING_WORDS[currentLoadingIdx] + '...';
+  }, 800);
+}
+
+function stopLoadingState() {
+  if (loadingInterval) {
+    clearInterval(loadingInterval);
+    loadingInterval = null;
+  }
+  if (optimizeButton) optimizeButton.disabled = false;
+  if (optimizeLabel) optimizeLabel.textContent = 'Optimize';
 }
 
 function setButtonState(state) {
@@ -530,7 +595,12 @@ function sendEnhanceRequest(text, framework) {
         }
 
         if (!response?.ok) {
-          reject(new Error(response?.error || "Enhance request failed"));
+          const error = response?.error;
+          const requestError = new Error(
+            typeof error === "object" ? error.message : error || "Enhance request failed",
+          );
+          requestError.code = typeof error === "object" ? error.code : "REQUEST_FAILED";
+          reject(requestError);
           return;
         }
 

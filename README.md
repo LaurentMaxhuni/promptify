@@ -5,23 +5,30 @@ Promptify is a Chrome extension that helps you enhance prompt text with a single
 ## Features
 - Prompt input and enhanced output UI
 - One-click Enhance workflow
-- Lightweight popup and side panel on supported sites
+- Lightweight popup and inline Optimize button on supported sites
 
 ## Supported sites
 - chatgpt.com and chat.openai.com
 - claude.ai
 - gemini.google.com
 - grok.com
+- *.canva.com
+- www.perplexity.ai
+- poe.com
+- copilot.microsoft.com
+- chat.deepseek.com
+- chat.mistral.ai
+- www.meta.ai and meta.ai
 
 ## Install (GitHub release)
 The extension is distributed via GitHub releases for now.
 
-1. Download the release from:
-   https://github.com/LaurentMaxhuni/promptify/releases/tag/v1.0
-2. Unzip the release (or the Source code zip from the release page).
+1. Download the Promptify v1.2 package from:
+   https://github.com/LaurentMaxhuni/promptify/releases
+2. Unzip the package.
 3. Open Chrome and go to `chrome://extensions`.
 4. Enable Developer mode.
-5. Click "Load unpacked" and select the `extension/` folder from the repo.
+5. Click "Load unpacked" and select the unzipped extension folder.
 
 ## Package the extension
 To create a Chrome Web Store-ready zip locally, run:
@@ -80,11 +87,46 @@ Notes:
 
 ## Backend (optional)
 If you wish to use your own API key follow the steps below.
-The extension calls a local backend at:
-`http://localhost:6767/api/groq?prompt=...`
+The extension calls the backend at:
+`https://promptify.qwert123456789.workers.dev/api/groq`
+
+It is a Cloudflare Worker located in `backend/`.
 
 To run it locally:
 1. Open `backend/`.
-2. Install dependencies: `npm install`
-3. Copy `.env.example` to `.env` and set `GROQ_API_KEY`.
-4. Start the server: `npm start`
+2. Create a `.dev.vars` file with `GROQ_API_KEY` and `PROMPTIFY_API_TOKEN`.
+3. Start the dev server: `npx wrangler dev`
+
+To deploy your own version:
+1. Set the secret: `npx wrangler secret put GROQ_API_KEY`
+2. Set the authentication secret: `npx wrangler secret put PROMPTIFY_API_TOKEN`
+3. Update `PROMPTIFY_ALLOWED_ORIGINS` in `backend/wrangler.toml` if your extension ID differs.
+4. Deploy: `npx wrangler deploy`
+5. Update `WORKER_URL` in `extension/background.js` to point to your Worker URL.
+
+The endpoint accepts only authenticated `POST` requests with a JSON body:
+
+```json
+{ "prompt": "your prompt", "framework": "RACE" }
+```
+
+The framework may be an empty string for the explicit no-framework mode. Requests are protected
+by a per-client rate limit, per-client daily quota, and global daily quota. Prompt text is not
+put in the request URL.
+
+The packaged extension receives `PROMPTIFY_API_TOKEN` from the `PROMPTIFY_API_TOKEN` environment
+variable during packaging. Set it before running `scripts/zip-extension.ps1`, and add the same
+value as a repository secret for the package workflow. Treat a published extension token as
+extractable client configuration; rotate it and rely on the Worker quotas/rate limits as defense
+in depth.
+
+Run the focused Worker regression checks with:
+
+```powershell
+node .\scripts\verify-worker.mjs
+```
+
+The checked-in Worker is named `promptify-api`, while the published extension currently targets
+`promptify.qwert123456789.workers.dev`. Verify the deployed workers.dev hostname before releasing;
+if the deployed Worker uses the checked-in name, update `WORKER_URL` and the manifest host permission
+to the corresponding `promptify-api` hostname.
