@@ -2,7 +2,7 @@
 # This deploys the API Worker only; the frontend remains on Vercel.
 name = "promptify"
 main = "backend/src/index.js"
-compatibility_date = "2026-08-16"
+compatibility_date = "2026-08-15"
 
 [vars]
 PROMPTIFY_ALLOWED_ORIGINS = "chrome-extension://egbcpmegonokjknlibpddibiocjfoggg"
