@@ -102,8 +102,9 @@ For Cloudflare Workers Builds, use these settings:
 - Build command: leave blank
 - Deploy command: `npx wrangler deploy`
 
-If you instead set the root directory to `backend`, use `backend/wrangler.toml` and run the
-same deploy command from that directory.
+The Cloudflare Worker must be named `promptify`. Remove any old `/backend-worker` root-directory
+setting; that was the previous repository layout. If you instead set the root directory to
+`backend`, use `backend/wrangler.toml` and run the same deploy command from that directory.
 
 To run it locally:
 1. Open `backend/`.
@@ -139,7 +140,5 @@ Run the focused Worker regression checks with:
 node .\scripts\verify-worker.mjs
 ```
 
-The checked-in Worker is named `promptify-api`, while the published extension currently targets
-`promptify.qwert123456789.workers.dev`. Verify the deployed workers.dev hostname before releasing;
-if the deployed Worker uses the checked-in name, update `WORKER_URL` and the manifest host permission
-to the corresponding `promptify-api` hostname.
+The checked-in Worker is named `promptify`, matching the published extension target
+`promptify.qwert123456789.workers.dev`.

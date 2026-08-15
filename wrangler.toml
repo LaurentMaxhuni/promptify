@@ -1,6 +1,6 @@
 # Repository-level entrypoint for Cloudflare Workers Builds.
 # This deploys the API Worker only; the frontend remains on Vercel.
-name = "promptify-api"
+name = "promptify"
 main = "backend/src/index.js"
 compatibility_date = "2026-08-16"
 
