@@ -85,23 +85,36 @@ Notes:
 - Before API publishing works, the item must already exist and the Store Listing and Privacy tabs must be completed in the dashboard.
 - If you changed visibility settings in the dashboard, Google requires one manual publish with that new visibility before API publishing works again.
 
-## Backend (optional)
-If you wish to use your own API key follow the steps below.
+## Backend (Cloudflare Worker)
+The frontend is deployed separately on Vercel. Cloudflare is used only for the API Worker.
+
 The extension calls the backend at:
 `https://promptify.qwert123456789.workers.dev/api/groq`
 
-It is a Cloudflare Worker located in `backend/`.
+The Worker source is in `backend/`. The repository-level `wrangler.toml` explicitly points
+Wrangler at `backend/src/index.js`, so Cloudflare Workers Builds does not try to detect or
+deploy frontend static files.
+
+For Cloudflare Workers Builds, use these settings:
+
+- Git branch: `main`
+- Root directory: leave blank (repository root)
+- Build command: leave blank
+- Deploy command: `npx wrangler deploy`
+
+If you instead set the root directory to `backend`, use `backend/wrangler.toml` and run the
+same deploy command from that directory.
 
 To run it locally:
 1. Open `backend/`.
-2. Create a `.dev.vars` file with `GROQ_API_KEY` and `PROMPTIFY_API_TOKEN`.
-3. Start the dev server: `npx wrangler dev`
+2. Create `backend/.dev.vars` with `GROQ_API_KEY` and `PROMPTIFY_API_TOKEN`.
+3. Start the dev server from `backend/`: `npx wrangler dev`
 
 To deploy your own version:
-1. Set the secret: `npx wrangler secret put GROQ_API_KEY`
+1. From the repository root, set the secret: `npx wrangler secret put GROQ_API_KEY`
 2. Set the authentication secret: `npx wrangler secret put PROMPTIFY_API_TOKEN`
-3. Update `PROMPTIFY_ALLOWED_ORIGINS` in `backend/wrangler.toml` if your extension ID differs.
-4. Deploy: `npx wrangler deploy`
+3. Update `PROMPTIFY_ALLOWED_ORIGINS` in `wrangler.toml` if your extension ID differs.
+4. Deploy from the repository root: `npx wrangler deploy`
 5. Update `WORKER_URL` in `extension/background.js` to point to your Worker URL.
 
 The endpoint accepts only authenticated `POST` requests with a JSON body:
