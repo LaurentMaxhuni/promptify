@@ -1,97 +1,91 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
   <title>Promptify</title>
   <link rel="stylesheet" href="popup.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-  </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-    rel="stylesheet">
 </head>
 
 <body>
   <main class="wrap">
-    <header>
-      <center>
-        <div>
-          <img src="../../logo.png" alt="">
-        </div>
-        <p>Enhance your prompt with a single click! ✨</p>
-      </center>
+    <header class="topbar">
+      <img src="../logo-icon.png" alt="Promptify" class="logo" />
+      <span class="brand-name">Promptify</span>
     </header>
-    <div class="main">
+
+    <div class="pane">
       <div
         id="input"
         class="input-area"
         contenteditable="plaintext-only"
-        data-placeholder="Place your prompt here."
+        data-placeholder="Paste your prompt here..."
         role="textbox"
         aria-label="Prompt input"
-        aria-multiline="true"></div>
-      <div class="custom-select">
-        <select id="framework-select">
-          <option value="" selected disabled>Select Framework</option>
-          <option value="CREO">CREO - Creative Refinement Engine Output</option>
-          <option value="RACE">RACE - Reasoned Analytical Completion Engine</option>
-          <option value="CARE">CARE - Contextual Analytical Recommendation Engine</option>
-          <option value="APE">APE - Analysis Proposal Execution</option>
-          <option value="RISE">RISE - Recognition Interpretation Strategic Explanation</option>
-          <option value="TAG">TAG - Think Act Guide</option>
-          <option value="COAST">COAST - Clarify Organize Apply Summarize Test</option>
-          <option value="CREATE">CREATE — Collect Reason Execute Adjust Track Evaluate</option>
-        </select>
+        aria-multiline="true"
+        data-empty="true"></div>
+
+      <div class="toolbar">
+        <div class="select-wrap">
+          <select id="framework-select">
+            <option value="" selected>No framework</option>
+            <option value="CREO">CREO</option>
+            <option value="RACE">RACE</option>
+            <option value="CARE">CARE</option>
+            <option value="APE">APE</option>
+            <option value="RISE">RISE</option>
+            <option value="TAG">TAG</option>
+            <option value="COAST">COAST</option>
+            <option value="CREATE">CREATE</option>
+          </select>
+        </div>
+        <button id="history-toggle-button" class="chats-btn" type="button" aria-controls="history-sidebar" aria-expanded="false" aria-label="History" title="History">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
       </div>
-      <div class="action-row">
-        <button class="enhance-button" id="enhance-button">Enhance</button>
-        <button
-          id="history-toggle-button"
-          class="secondary-button history-toggle-button"
-          type="button"
-          aria-controls="history-sidebar"
-          aria-expanded="false">Chats</button>
-      </div>
+
+      <button class="enhance-btn" id="enhance-button" type="button">
+        <svg class="sparkle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1-8.313-12.454z"/>
+          <path d="M17 4a2 2 0 0 0-2 2"/>
+          <path d="M19 7a2 2 0 0 0-2-2"/>
+          <path d="M19 11v.5"/>
+        </svg>
+        <span id="enhance-label">Optimize</span>
+      </button>
+
+      <div id="status-message" class="status-message" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+      <button id="retry-button" class="retry-button" type="button" hidden>Try again</button>
+
       <div class="output-wrap">
-        <div id="output" class="output-area" data-placeholder="Your enhanced prompt will be here."
-          aria-label="Enhanced prompt output"></div>
-        <button id="copy-button" type="button">
-          <svg id='Copy_24' width='20' height='20' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'
-            xmlns:xlink='http://www.w3.org/1999/xlink'>
-            <rect width='24' height='24' stroke='none' fill='#000000' opacity='0' />
-          
-          
-            <g transform="matrix(1 0 0 1 12 12)">
-              <path
-                style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;"
-                transform=" translate(-12, -12)"
-                d="M 4 2 C 2.895 2 2 2.895 2 4 L 2 18 L 4 18 L 4 4 L 18 4 L 18 2 L 4 2 z M 8 6 C 6.895 6 6 6.895 6 8 L 6 20 C 6 21.105 6.895 22 8 22 L 20 22 C 21.105 22 22 21.105 22 20 L 22 8 C 22 6.895 21.105 6 20 6 L 8 6 z M 8 8 L 20 8 L 20 20 L 8 20 L 8 8 z"
-                stroke-linecap="round" />
-            </g>
+        <div id="output" class="output-area" data-placeholder="Refined prompt" aria-label="Enhanced prompt output"></div>
+        <button id="copy-button" class="copy-btn" type="button" aria-label="Copy output">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
           </svg>
         </button>
       </div>
     </div>
-    <div id="history-backdrop" class="history-backdrop" aria-hidden="true"></div>
-    <aside id="history-sidebar" class="history-sidebar" aria-labelledby="history-title" aria-hidden="true">
+
+    <div id="history-backdrop" class="history-backdrop" aria-hidden="true" hidden></div>
+    <aside id="history-sidebar" class="history-sidebar" role="dialog" aria-modal="true" aria-labelledby="history-title" aria-hidden="true" hidden>
       <div class="history-sidebar-header">
-        <div>
-          <h2 id="history-title">Saved Chats</h2>
-          <p class="history-sidebar-subtitle">Open a previous prompt and response.</p>
-        </div>
-        <button id="history-close-button" class="secondary-button history-close-button" type="button">Close</button>
+        <h2 id="history-title">History</h2>
+        <button id="history-close-button" class="icon-btn" type="button" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
+      <p class="history-sidebar-subtitle">Previously enhanced prompts.</p>
       <div class="history-sidebar-actions">
-        <button id="load-history-button" class="secondary-button" type="button">Load Chats</button>
+        <button id="load-history-button" class="secondary-btn" type="button">Load Chats</button>
+        <button id="clear-history-button" class="secondary-btn danger-btn" type="button">Clear</button>
       </div>
       <div id="history-list" class="history-list" data-placeholder="No saved chats yet."></div>
     </aside>
-    <footer>
-      &copy; 2026 All Rights Reserved
+
+    <footer class="footer-bar">
+      <span>Promptify</span>
     </footer>
   </main>
   <script src="popup.js"></script>
