@@ -99,7 +99,10 @@ assert.deepEqual(JSON.parse(upstreamCalls[0].init.body).messages.at(-1), {
   role: "user",
   content: "draft a launch plan",
 });
-assert.match(JSON.parse(upstreamCalls[0].init.body).messages[0].content, /No framework is selected/);
+const systemPrompt = JSON.parse(upstreamCalls[0].init.body).messages[0].content;
+assert.match(systemPrompt, /No named framework is selected/);
+assert.match(systemPrompt, /Return exactly one copy-paste-ready prompt/);
+assert.match(systemPrompt, /Do not over-engineer a simple request/);
 assert.equal(response.headers.get("Access-Control-Allow-Origin"), extensionOrigin);
 
 response = await worker.fetch(makeRequest({ prompt: "bad framework", framework: "UNKNOWN" }), makeEnv());
