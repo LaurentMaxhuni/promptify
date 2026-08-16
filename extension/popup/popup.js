@@ -4,6 +4,9 @@ const input = document.getElementById('input');
 const output = document.getElementById('output');
 const framework = document.getElementById('framework-select');
 const copyButton = document.getElementById('copy-button');
+const clearInputButton = document.getElementById('clear-input-button');
+const inputCount = document.getElementById('input-count');
+const outputState = document.getElementById('output-state');
 const historyToggleButton = document.getElementById('history-toggle-button');
 const historyCloseButton = document.getElementById('history-close-button');
 const historyBackdrop = document.getElementById('history-backdrop');
@@ -15,6 +18,7 @@ const statusMessage = document.getElementById('status-message');
 const retryButton = document.getElementById('retry-button');
 const CHAT_HISTORY_KEY = 'chatHistory';
 const PREFERRED_FRAMEWORK_KEY = 'preferredFramework';
+const MAX_PROMPT_CHARS = 12_000;
 const MAX_HISTORY_ENTRIES = 50;
 const MAX_HISTORY_BYTES = 250_000;
 let lastEnhanced = '';
@@ -66,6 +70,22 @@ input.addEventListener('paste', (event) => {
   document.execCommand('insertText', false, text);
 });
 
+input.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    if (!enhanceButton.disabled) void enhanceCurrentPrompt();
+  }
+});
+
+clearInputButton.addEventListener('click', () => {
+  input.textContent = '';
+  invalidateEnhancedResult();
+  syncInputState();
+  retryButton.hidden = true;
+  setStatusMessage('', 'info');
+  input.focus();
+});
+
 enhanceButton.addEventListener('click', async () => {
   await enhanceCurrentPrompt();
 });
@@ -82,10 +102,17 @@ async function enhanceCurrentPrompt() {
     return;
   }
 
+  if (text.length > MAX_PROMPT_CHARS) {
+    setStatusMessage(`Keep your prompt under ${MAX_PROMPT_CHARS.toLocaleString()} characters.`, 'error');
+    input.focus();
+    return;
+  }
+
   const frameworkValue = framework.value;
 
   startLoadingState();
   setStatusMessage('Optimizing your prompt...', 'loading');
+  outputState.textContent = 'Working...';
   retryButton.hidden = true;
 
   try {
@@ -122,6 +149,7 @@ async function enhanceCurrentPrompt() {
     lastEnhanced = cleaned;
     lastEnhancedInput = text;
     output.textContent = cleaned;
+    syncCopyState();
     const saved = await addHistoryEntry({
       prompt: text,
       response: cleaned,
@@ -140,13 +168,14 @@ async function enhanceCurrentPrompt() {
     retryButton.hidden = false;
   } finally {
     stopLoadingState();
+    syncCopyState();
   }
 }
 
 copyButton.addEventListener('click', async () => {
   const currentInput = getInputText();
   const text = lastEnhanced && lastEnhancedInput === currentInput ? lastEnhanced : currentInput;
-  if (!text.trim()) return;
+  if (!text.trim() || copyButton.disabled) return;
 
   const copied = await copyText(text);
   if (!copied) return;
@@ -156,7 +185,7 @@ copyButton.addEventListener('click', async () => {
   window.clearTimeout(copyButton._resetTimer);
   copyButton._resetTimer = window.setTimeout(() => {
     delete copyButton.dataset.state;
-    copyButton.setAttribute('aria-label', 'Copy output');
+    syncCopyState();
   }, 1200);
 });
 
@@ -224,11 +253,16 @@ function getInputText() {
 }
 
 function syncInputState() {
-  input.dataset.empty = getInputText().trim() ? 'false' : 'true';
+  const text = getInputText();
+  const hasText = Boolean(text.trim());
+  input.dataset.empty = hasText ? 'false' : 'true';
+  inputCount.textContent = `${text.length.toLocaleString()} / ${MAX_PROMPT_CHARS.toLocaleString()}`;
+  inputCount.dataset.state = text.length > MAX_PROMPT_CHARS ? 'over-limit' : '';
+  clearInputButton.hidden = !hasText;
+  syncCopyState();
 }
 
 syncInputState();
-copyButton.setAttribute('aria-label', 'Copy output');
 initializeHistorySidebar();
 renderHistory();
 initializePreferredFramework();
@@ -404,6 +438,7 @@ function openHistoryEntry(index) {
   lastEnhanced = entry.response || '';
   lastEnhancedInput = entry.prompt || '';
   output.textContent = lastEnhanced || '';
+  syncCopyState();
   setStatusMessage('Saved prompt opened.', 'success');
   setHistorySidebarOpen(false);
 }
@@ -571,10 +606,36 @@ function trapHistoryFocus(event) {
 }
 
 function invalidateEnhancedResult() {
-  if (!lastEnhanced && !lastEnhancedInput) return;
   lastEnhanced = '';
   lastEnhancedInput = '';
   output.textContent = '';
+  syncCopyState();
+}
+
+function syncCopyState() {
+  const currentInput = getInputText();
+  const hasEnhancedResult = Boolean(
+    lastEnhanced && lastEnhancedInput === currentInput && output.textContent.trim(),
+  );
+  const copySource = hasEnhancedResult ? lastEnhanced : currentInput;
+
+  copyButton.disabled = !copySource.trim();
+  copyButton.setAttribute(
+    'aria-label',
+    hasEnhancedResult
+      ? 'Copy optimized prompt'
+      : currentInput.trim()
+        ? 'Copy draft prompt'
+        : 'Copy output',
+  );
+
+  if (hasEnhancedResult) {
+    outputState.textContent = 'Ready to copy';
+  } else if (currentInput.trim()) {
+    outputState.textContent = 'Draft only';
+  } else {
+    outputState.textContent = 'Nothing yet';
+  }
 }
 
 function setStatusMessage(message, state = 'info') {

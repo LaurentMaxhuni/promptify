@@ -527,18 +527,23 @@ async function handleOptimizeClick() {
     await replacePromptContent(prompt, enhanced);
     focusPrompt(prompt);
     setButtonState("success");
+    optimizeButton.setAttribute("aria-label", "Prompt optimized");
+    optimizeButton.title = "Prompt optimized";
     stopLoadingState();
     window.clearTimeout(optimizeButton._promptifyResetTimer);
     optimizeButton._promptifyResetTimer = window.setTimeout(() => {
-      setButtonState("");
+      resetButtonFeedback();
     }, 1200);
   } catch (error) {
+    const message = error?.message || "Enhancement failed. Try again.";
     console.error("Promptify optimize failed", error);
     setButtonState("error");
+    optimizeButton.setAttribute("aria-label", `Optimization failed: ${message}`);
+    optimizeButton.title = message;
     stopLoadingState();
     window.clearTimeout(optimizeButton._promptifyResetTimer);
     optimizeButton._promptifyResetTimer = window.setTimeout(() => {
-      setButtonState("");
+      resetButtonFeedback();
     }, 1200);
   }
 }
@@ -576,11 +581,17 @@ function setButtonState(state) {
   optimizeButton.disabled = state === "loading";
 }
 
+function resetButtonFeedback() {
+  setButtonState("");
+  optimizeButton.setAttribute("aria-label", "Optimize prompt");
+  optimizeButton.title = "Optimize prompt";
+}
+
 function flashButtonState(state) {
   setButtonState(state);
   window.clearTimeout(optimizeButton._promptifyResetTimer);
   optimizeButton._promptifyResetTimer = window.setTimeout(() => {
-    setButtonState("");
+    resetButtonFeedback();
   }, 1200);
 }
 

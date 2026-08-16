@@ -114,7 +114,7 @@ To run it locally:
 To deploy your own version:
 1. From the repository root, set the secret: `npx wrangler secret put GROQ_API_KEY`
 2. Set the authentication secret: `npx wrangler secret put PROMPTIFY_API_TOKEN`
-3. Update `PROMPTIFY_ALLOWED_ORIGINS` in `wrangler.toml` if your extension ID differs.
+3. Update `PROMPTIFY_ALLOWED_ORIGINS` in `wrangler.toml` if your extension ID or supported host list differs. Content-script requests may use the host page's origin, so keep the list explicit and synchronized with `extension/manifest.json`.
 4. Deploy from the repository root: `npx wrangler deploy`
 5. Update `WORKER_URL` in `extension/background.js` to point to your Worker URL.
 

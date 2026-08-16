@@ -5,7 +5,9 @@ main = "backend/src/index.js"
 compatibility_date = "2026-08-15"
 
 [vars]
-PROMPTIFY_ALLOWED_ORIGINS = "chrome-extension://egbcpmegonokjknlibpddibiocjfoggg"
+# Content scripts can send requests with the host page's origin. Keep this explicit;
+# never replace it with Access-Control-Allow-Origin = "*".
+PROMPTIFY_ALLOWED_ORIGINS = "chrome-extension://egbcpmegonokjknlibpddibiocjfoggg,https://chatgpt.com,https://chat.openai.com,https://claude.ai,https://gemini.google.com,https://grok.com,https://*.canva.com,https://www.perplexity.ai,https://poe.com,https://copilot.microsoft.com,https://chat.deepseek.com,https://chat.mistral.ai,https://www.meta.ai,https://meta.ai"
 MAX_PROMPT_CHARS = "12000"
 MAX_REQUEST_BYTES = "64000"
 MAX_RESPONSE_BYTES = "1000000"

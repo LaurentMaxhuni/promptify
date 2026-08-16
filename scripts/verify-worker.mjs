@@ -16,6 +16,9 @@ const workerModule = await import(
 );
 
 const extensionOrigin = "chrome-extension://egbcpmegonokjknlibpddibiocjfoggg";
+const chatGptOrigin = "https://chatgpt.com";
+const canvaOrigin = "https://app.canva.com";
+const allowedOrigins = [extensionOrigin, chatGptOrigin, "https://*.canva.com"].join(",");
 let upstreamResponse = new Response(
   JSON.stringify({
     choices: [{ message: { content: "Enhanced prompt" } }],
@@ -27,14 +30,14 @@ const upstreamCalls = [];
 globalThis.fetch = async (url, init) => {
   assert.equal(url, "https://api.groq.com/openai/v1/chat/completions");
   upstreamCalls.push({ url, init });
-  return upstreamResponse;
+  return upstreamResponse.clone();
 };
 
 function makeEnv(overrides = {}) {
   return {
     GROQ_API_KEY: "groq-test-key",
     PROMPTIFY_API_TOKEN: "promptify-test-token",
-    PROMPTIFY_ALLOWED_ORIGINS: extensionOrigin,
+    PROMPTIFY_ALLOWED_ORIGINS: allowedOrigins,
     RATE_LIMITER: {
       limit: async () => ({ success: overrides.rateLimitAllowed ?? true }),
     },
@@ -104,6 +107,35 @@ assert.match(systemPrompt, /No named framework is selected/);
 assert.match(systemPrompt, /Return exactly one copy-paste-ready prompt/);
 assert.match(systemPrompt, /Do not over-engineer a simple request/);
 assert.equal(response.headers.get("Access-Control-Allow-Origin"), extensionOrigin);
+
+response = await worker.fetch(
+  makeRequest(
+    {},
+    {
+      Origin: chatGptOrigin,
+      "Access-Control-Request-Method": "POST",
+      "Access-Control-Request-Headers": "content-type,authorization",
+    },
+    "OPTIONS",
+  ),
+  makeEnv(),
+);
+assert.equal(response.status, 204);
+assert.equal(response.headers.get("Access-Control-Allow-Origin"), chatGptOrigin);
+
+response = await worker.fetch(
+  makeRequest({ prompt: "chatgpt origin request" }, { Origin: chatGptOrigin }),
+  makeEnv(),
+);
+assert.equal(response.status, 200);
+assert.equal(response.headers.get("Access-Control-Allow-Origin"), chatGptOrigin);
+
+response = await worker.fetch(
+  makeRequest({ prompt: "canva subdomain request" }, { Origin: canvaOrigin }),
+  makeEnv(),
+);
+assert.equal(response.status, 200);
+assert.equal(response.headers.get("Access-Control-Allow-Origin"), canvaOrigin);
 
 response = await worker.fetch(makeRequest({ prompt: "bad framework", framework: "UNKNOWN" }), makeEnv());
 assert.equal(response.status, 400);

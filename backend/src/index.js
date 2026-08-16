@@ -447,7 +447,23 @@ function getCorsOrigin(request, env) {
     .map((value) => value.trim())
     .filter(Boolean);
 
-  return configured.includes(origin) ? origin : null;
+  return configured.some((allowedOrigin) => originMatches(origin, allowedOrigin)) ? origin : null;
+}
+
+function originMatches(origin, allowedOrigin) {
+  if (origin === allowedOrigin) return true;
+
+  if (allowedOrigin === "https://*.canva.com") {
+    try {
+      const url = new URL(origin);
+      return url.protocol === "https:" &&
+        (url.hostname === "canva.com" || url.hostname.endsWith(".canva.com"));
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 function corsHeaders(origin) {
